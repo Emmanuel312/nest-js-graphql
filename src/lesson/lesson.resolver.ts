@@ -1,12 +1,24 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  ResolveField,
+  Parent,
+} from '@nestjs/graphql';
 import { LessonType } from './lesson.type';
 import { LessonService } from './lesson.service';
-import { Inject } from '@nestjs/common';
 import { CreateLessonInput } from './create-lesson.input';
+import { AssignStudentsToLessonInput } from './assign-students-to-lesson-input';
+import { Lesson } from './lesson.entity';
+import { StudentService } from 'src/student/student.service';
 
 @Resolver(of => LessonType)
 export class LessonResolver {
-  constructor(private lessonService: LessonService) {}
+  constructor(
+    private lessonService: LessonService,
+    private studentService: StudentService,
+  ) {}
 
   @Query(returns => LessonType)
   getLesson(@Args('id') id: string) {
@@ -23,5 +35,20 @@ export class LessonResolver {
   @Query(returns => [LessonType])
   getLessons() {
     return this.lessonService.getLessons();
+  }
+
+  @Mutation(retunrs => LessonType)
+  assignStudentsToLesson(
+    @Args('assignStudentsToLessonInput')
+    assignStudentsToLessonInput: AssignStudentsToLessonInput,
+  ) {
+    const { lessonId, studentsIds } = assignStudentsToLessonInput;
+    return this.lessonService.assignStudentsToLesson(lessonId, studentsIds);
+  }
+
+  @ResolveField()
+  async students(@Parent() lesson: Lesson) {
+    console.log(lesson);
+    return this.studentService.getManyStudents(lesson.students);
   }
 }
